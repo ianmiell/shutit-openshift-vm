@@ -86,9 +86,84 @@ class openshift_vm(ShutItModule):
 		shutit.send('oc login -u admin -p anystringwilldo',note='Log in as admin')
 		shutit.send('oc whoami -t',note='Display my login token')
 		shutit.send('TOKEN=$(oc whoami -t)',note='Put token into env variable.')
-		shutit.pause_point('')
-		shutit.login(command='sudo su')
+		shutit.send('oc new-project hello-openshift --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
+		shutit.send('oc project new-project',note='Switch to that project')
+		shutit.send('oc status',note='Get information about the current project')
+		# TODO: chapter 3 of user guide
+		# Chapter 4 of user guide
+		shutit.send('git clone https://github.com/ianmiell/',note='Get source code of project w/Dockerfile') TODO
+		shutit.send('cd ') TODO
+		shutit.send('oc new-app .',note='Figures out that this is a docker project and builds accordingly.')
+		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') description TODO
+		shutit.send('oc delete all',note='Delete all entries, for clarity')
 
+		shutit.send('oc new-app https://github.com/openshift/sti-ruby.git --context-dir=2.0/test/puma-test-app',note='Create an application from a github project, specifying a directory to work from.')
+		shutit.send('oc delete all',note='Delete all entries, for clarity')
+
+		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') description TODO
+		shutit.send('oc new-app https://github.com/openshift/ruby-hello-world.git#beta4',note='Create an application from git repo with a branch')
+		shutit.send('oc delete all',note='Delete all entries, for clarity')
+
+		shutit.send('oc new-app TODO',note='') TODO example of source detection for languages
+		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') description TODO
+		shutit.send('oc delete all',note='Delete all entries, for clarity')
+
+		shutit.send('oc new-app openshift/ruby-20-centos7:latest~https://github.com/openshift/ruby-hello-world.git',note="Use a publicly-available builder image to build a git repository's code") TODO
+		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') description TODO
+		shutit.send('oc delete all',note='Delete all entries, for clarity')
+
+		shutit.send('oc new-app mysql',note='Create an application from a docker image')
+		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') description TODO
+		shutit.send('oc delete all',note='Delete all entries, for clarity')
+
+		shutit.send('oc new-app nginx+mysql',note='Deploy nginx and mysql to the same pod')
+		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') description TODO
+		shutit.send('oc delete all',note='Delete all entries, for clarity')
+
+		shutit.send('oc new-app ruby~https://github.com/openshift/ruby-hello-world mysql --group=ruby+mysql',note='Build a ruby image with some code, add a mysql image to the app and place them in the same pod.')
+		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') description TODO
+		shutit.send('oc delete all',note='Delete all entries, for clarity')
+
+		# TODO: 4.2.3 Templates
+
+		# TODO: 5.x Templates
+
+
+		# Chapter 10 Secrets
+		shutit.send('''cat > username << END
+mysecretusername
+END''',note='create a secret username file')
+		shutit.send('''cat > password << END
+mysecretpassword
+END''',note='create a secret password file')
+		shutit.send('''cat > docker.cfg << END
+my
+secret
+cfg
+file
+END''',note='create a secret docker.cfg')
+		shutit.send('''cat > secret.json << END
+{
+  "apiversion": "v1",
+  "kind": "secret",
+  "name": "mysecret",
+  "namespace": "hello-openshift",
+  "data": {
+    "username": "$(base64 username)",
+    "password": "$(base64 password)"
+  }
+}
+END''')
+		shutit.send('oc create -f secret.json',note='create the secret from the json file')
+		# TODO: cf Examples link in 10.3.2 / 10.5
+
+		# TODO: volumes
+		shutit.send('oc volume deploymentconfig --all --name myvolume -t emptyDir -m /mounteddir',note='TODO')
+		shutit.send('oc volume deploymentconfig --all --name mysecretvolume -t secret -m /mountedsecretdir --secret-name mysecret' ,note='TODO')
+		shutit.send('oc volume deploymentconfig --all --list' ,note='List all the volumes we have created')
+		
+		shutit.send('',note='')
+		shutit.pause_point('')
 		shutit.logout()
 		shutit.logout()
 		return True
