@@ -161,6 +161,12 @@ END''')
 		shutit.send('oc volume deploymentconfig --all --name myvolume -t emptyDir -m /mounteddir',note='TODO')
 		shutit.send('oc volume deploymentconfig --all --name mysecretvolume -t secret -m /mountedsecretdir --secret-name mysecret' ,note='TODO')
 		shutit.send('oc volume deploymentconfig --all --list' ,note='List all the volumes we have created')
+
+		# TODO: roles etc
+		# oadm policy
+		# oc policy
+		shutit.send('oc get rolebinding',note='')
+		shutit.send('oc get clusterrolebinding',note='')
 		
 		shutit.send('',note='')
 		shutit.pause_point('')
