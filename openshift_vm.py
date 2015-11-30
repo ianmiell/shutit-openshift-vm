@@ -168,37 +168,37 @@ class openshift_vm(ShutItModule):
 		shutit.send('oc status',note='Get information about the current project')
 		# TODO: chapter 3 of user guide
 		# Chapter 4 of user guide
-		shutit.send('git clone https://github.com/ianmiell/',note='Get source code of project w/Dockerfile') TODO
-		shutit.send('cd ') TODO
-		shutit.send('oc new-app .',note='Figures out that this is a docker project and builds accordingly.')
-		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') description TODO
-		shutit.send('oc delete all',note='Delete all entries, for clarity')
+		#shutit.send('git clone https://github.com/ianmiell/',note='Get source code of project w/Dockerfile') #TODO
+		#shutit.send('cd ') 
+		#shutit.send('oc new-app .',note='Figures out that this is a docker project and builds accordingly.')
+		#shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
+		#shutit.send('oc delete all',note='Delete all entries, for clarity')
 
 		shutit.send('oc new-app https://github.com/openshift/sti-ruby.git --context-dir=2.0/test/puma-test-app',note='Create an application from a github project, specifying a directory to work from.')
 		shutit.send('oc delete all',note='Delete all entries, for clarity')
 
-		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') description TODO
+		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc new-app https://github.com/openshift/ruby-hello-world.git#beta4',note='Create an application from git repo with a branch')
 		shutit.send('oc delete all',note='Delete all entries, for clarity')
 
-		shutit.send('oc new-app TODO',note='') TODO example of source detection for languages
-		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') description TODO
+		shutit.send('oc new-app TODO',note='') #TODO example of source detection for languages
+		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc delete all',note='Delete all entries, for clarity')
 
 		shutit.send('oc new-app openshift/ruby-20-centos7:latest~https://github.com/openshift/ruby-hello-world.git',note="Use a publicly-available builder image to build a git repository's code") TODO
-		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') description TODO
+		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc delete all',note='Delete all entries, for clarity')
 
 		shutit.send('oc new-app mysql',note='Create an application from a docker image')
-		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') description TODO
+		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc delete all',note='Delete all entries, for clarity')
 
 		shutit.send('oc new-app nginx+mysql',note='Deploy nginx and mysql to the same pod')
-		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') description TODO
+		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc delete all',note='Delete all entries, for clarity')
 
 		shutit.send('oc new-app ruby~https://github.com/openshift/ruby-hello-world mysql --group=ruby+mysql',note='Build a ruby image with some code, add a mysql image to the app and place them in the same pod.')
-		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') description TODO
+		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc delete all',note='Delete all entries, for clarity')
 
 		# TODO: 4.2.3 Templates
@@ -245,7 +245,6 @@ END''')
 		shutit.send('oc get rolebinding',note='')
 		shutit.send('oc get clusterrolebinding',note='')
 		
-		shutit.send('',note='')
 		shutit.pause_point('')
 		shutit.logout()
 		shutit.logout()
