@@ -8,83 +8,6 @@ class openshift_vm(ShutItModule):
 
 
 	def build(self, shutit):
-# From: pkg/authorization/api/types.go
-# oc get builds
-# oc get buildconfigs
-# oc get buildlogs
-# oc get buildconfigs/instantiate
-# oc get buildconfigs/instantiatebinary
-# oc get builds/log
-# oc get builds/clone
-# oc get buildconfigs/webhooks
-# oc get imagestreams
-# oc get imagestreammappings
-# oc get imagestreamtags
-# oc get imagestreamimages
-# oc get deployments
-# oc get deploymentconfigs
-# oc get generatedeploymentconfigs
-# oc get deploymentconfigrollbacks
-# oc get deploymentconfigs/log
-# oc get deploymentconfigs/scale
-# oc get clusternetworks
-# oc get hostsubnets
-# oc get netnamespaces
-# oc get templates
-# oc get templateconfigs
-# oc get processedtemplates
-# oc get identities
-# oc get users
-# oc get useridentitymappings
-# oc get groups
-# oc get oauthauthorizetokens
-# oc get oauthaccesstokens
-# oc get oauthclients
-# oc get oauthclientauthorizations
-# oc get policies
-# oc get policybindings
-# oc get roles
-# oc get resourceaccessreviews" /* cluster scoped*/
-# oc get subjectaccessreviews" /* cluster scoped*/
-# oc get localresourceaccessreviews
-# oc get localsubjectaccessreviews
-# oc get routes
-# oc get projects
-# oc get clusterroles
-# oc get clusterpolicybindings
-# oc get images" /* cluster scoped*/
-# oc get projectrequests
-# oc get builds/details
-# oc get imagestreams/status
-# oc get routes/status
-# oc get limitranges
-# oc get resourcequotas
-# oc get resourcequotausages
-# oc get pods
-# oc get replicationcontrollers
-# oc get serviceaccounts
-# oc get services
-# oc get endpoints
-# oc get persistentvolumeclaims
-# oc get pods/log
-# oc get minions
-# oc get nodes
-# oc get bindings
-# oc get events
-# oc get namespaces
-# oc get persistentvolumes
-# oc get securitycontextconstraints
-# oc get pods/status
-# oc get resourcequotas/status
-# oc get namespaces/status
-# oc get replicationcontrollers/status
-# oc get oauthauthorizetokens
-# oc get oauthaccesstokens
-# oc get secrets
-# oc get clusterpolicies
-# oc get rolebindings DONE
-# oc get clusterrolebindings DONE
-
 		# Some useful API calls for reference. See shutit's docs for more info and options:
 		#
 		# ISSUING BASH COMMANDS
@@ -248,6 +171,82 @@ END''')
 		shutit.pause_point('')
 		shutit.logout()
 		shutit.logout()
+# From: pkg/authorization/api/types.go
+# oc get builds
+# oc get buildconfigs
+# oc get buildlogs
+# oc get buildconfigs/instantiate
+# oc get buildconfigs/instantiatebinary
+# oc get builds/log
+# oc get builds/clone
+# oc get buildconfigs/webhooks
+# oc get imagestreams
+# oc get imagestreammappings
+# oc get imagestreamtags
+# oc get imagestreamimages
+# oc get deployments
+# oc get deploymentconfigs
+# oc get generatedeploymentconfigs
+# oc get deploymentconfigrollbacks
+# oc get deploymentconfigs/log
+# oc get deploymentconfigs/scale
+# oc get clusternetworks
+# oc get hostsubnets
+# oc get netnamespaces
+# oc get templates
+# oc get templateconfigs
+# oc get processedtemplates
+# oc get identities
+# oc get users
+# oc get useridentitymappings
+# oc get groups
+# oc get oauthauthorizetokens
+# oc get oauthaccesstokens
+# oc get oauthclients
+# oc get oauthclientauthorizations
+# oc get policies
+# oc get policybindings
+# oc get roles
+# oc get resourceaccessreviews" /* cluster scoped*/
+# oc get subjectaccessreviews" /* cluster scoped*/
+# oc get localresourceaccessreviews
+# oc get localsubjectaccessreviews
+# oc get routes
+# oc get projects
+# oc get clusterroles
+# oc get clusterpolicybindings
+# oc get images" /* cluster scoped*/
+# oc get projectrequests
+# oc get builds/details
+# oc get imagestreams/status
+# oc get routes/status
+# oc get limitranges
+# oc get resourcequotas
+# oc get resourcequotausages
+# oc get pods
+# oc get replicationcontrollers
+# oc get serviceaccounts
+# oc get services
+# oc get endpoints
+# oc get persistentvolumeclaims
+# oc get pods/log
+# oc get minions
+# oc get nodes
+# oc get bindings
+# oc get events
+# oc get namespaces
+# oc get persistentvolumes
+# oc get securitycontextconstraints
+# oc get pods/status
+# oc get resourcequotas/status
+# oc get namespaces/status
+# oc get replicationcontrollers/status
+# oc get oauthauthorizetokens
+# oc get oauthaccesstokens
+# oc get secrets
+# oc get clusterpolicies
+# oc get rolebindings DONE
+# oc get clusterrolebindings DONE
 		return True
 
 	def get_config(self, shutit):
