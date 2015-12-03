@@ -4,5 +4,6 @@ OpenShift VM
 ```
 git clone --recursive https://github.com/ianmiell/shutit-openshift-vm
 cd shutit-openshift-vm
-./run.sh
+./walkthrough.sh
 ```
+
