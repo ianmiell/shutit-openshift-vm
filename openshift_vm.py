@@ -168,6 +168,7 @@ END''')
 		shutit.send('oc get rolebinding',note='')
 		shutit.send('oc get clusterrolebinding',note='')
 		
+		shutit.send('oc ex diagnostics',note='')
 		shutit.pause_point('')
 		shutit.logout()
 		shutit.logout()
