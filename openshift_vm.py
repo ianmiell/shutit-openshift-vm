@@ -80,6 +80,7 @@ class openshift_vm(ShutItModule):
 		shutit.send('vagrant up --provider virtualbox')
 		shutit.login(command='vagrant ssh')
 		shutit.login(command='sudo su -',note='Become root (there is a problem logging in as admin with the vagrant user')
+		shutit.send('yum install -y socat') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
 		shutit.send('oc whoami',note='Find out who I am logged in as')
 		shutit.send('oc describe users',note='Look up users on the system')
 		shutit.send('oc describe groups',note='Look up groups on the system')
@@ -311,6 +312,7 @@ END''')
 		shutit.send('oc get rolebinding',note='')
 		shutit.send('oc get clusterrolebinding',note='')
 		
+		shutit.send('oc ex diagnostics',note='')
 		shutit.pause_point('')
 		shutit.logout()
 		shutit.logout()
