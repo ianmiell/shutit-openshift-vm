@@ -72,6 +72,7 @@ class openshift_vm(ShutItModule):
 		#         - Get input from user and return output
 		# shutit.fail(msg)       - Fail the program and exit with status 1
 		#
+		#from: https://access.redhat.com/documentation/en/openshift-enterprise/version-3.0/openshift-enterprise-30-developer-guide/
 		shutit.send('rm -rf /tmp/openshift_vm')
 		shutit.send('mkdir -p /tmp/openshift_vm')
 		shutit.send('cd /tmp/openshift_vm')
@@ -89,45 +90,185 @@ class openshift_vm(ShutItModule):
 		shutit.send('oc new-project hello-openshift --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
 		shutit.send('oc project new-project',note='Switch to that project')
 		shutit.send('oc status',note='Get information about the current project')
-		# TODO: chapter 3 of user guide
 		# Chapter 4 of user guide
-		#shutit.send('git clone https://github.com/ianmiell/',note='Get source code of project w/Dockerfile') #TODO
-		#shutit.send('cd ') 
-		#shutit.send('oc new-app .',note='Figures out that this is a docker project and builds accordingly.')
-		#shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
-		#shutit.send('oc delete all',note='Delete all entries, for clarity')
+		shutit.send('git clone https://github.com/ianmiell/shutit-airflow',note='Get source code of project w/Dockerfile') #TODO
+		shutit.send('cd ') 
+		shutit.send('oc new-app .',note='Figures out that this is a docker project and builds accordingly.')
+		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
+		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
 
 		shutit.send('oc new-app https://github.com/openshift/sti-ruby.git --context-dir=2.0/test/puma-test-app',note='Create an application from a github project, specifying a directory to work from.')
-		shutit.send('oc delete all',note='Delete all entries, for clarity')
+		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
 
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc new-app https://github.com/openshift/ruby-hello-world.git#beta4',note='Create an application from git repo with a branch')
-		shutit.send('oc delete all',note='Delete all entries, for clarity')
+		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
 
-		shutit.send('oc new-app TODO',note='') #TODO example of source detection for languages
+		shutit.send('oc new-app openshift/ruby-20-centos7:latest~https://github.com/openshift/ruby-hello-world.git',note="Use a publicly-available builder image to build a git repository's code") # TODO
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
-		shutit.send('oc delete all',note='Delete all entries, for clarity')
-
-		shutit.send('oc new-app openshift/ruby-20-centos7:latest~https://github.com/openshift/ruby-hello-world.git',note="Use a publicly-available builder image to build a git repository's code") TODO
-		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
-		shutit.send('oc delete all',note='Delete all entries, for clarity')
+		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
 
 		shutit.send('oc new-app mysql',note='Create an application from a docker image')
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
-		shutit.send('oc delete all',note='Delete all entries, for clarity')
+		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
 
 		shutit.send('oc new-app nginx+mysql',note='Deploy nginx and mysql to the same pod')
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
-		shutit.send('oc delete all',note='Delete all entries, for clarity')
+		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
 
 		shutit.send('oc new-app ruby~https://github.com/openshift/ruby-hello-world mysql --group=ruby+mysql',note='Build a ruby image with some code, add a mysql image to the app and place them in the same pod.')
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
-		shutit.send('oc delete all',note='Delete all entries, for clarity')
+		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
 
-		# TODO: 4.2.3 Templates
+		# 4.2.3 Templates
+		shutit.get_url('application-template-stibuild.json',['https://raw.githubusercontent.com/openshift/origin/master/examples/sample-app'])
+		shutit.send('cat application-template-stibuild.json',note='json to create a ruby application from a template')
+		shutit.send('oc create -f application-template-stibuild.json',note='Load the template into the system')
+		shutit.send('oc new-app ruby-helloworld-sample',note='Create an application from this template')
+		shutit.send('oc delete all --all')
+		shutit.send('oc process --parameters ruby-helloworld-sample',note='Show the parameters available for this template')
+		shutit.send('oc new-app ruby-helloworld-sample -p ADMIN_USERNAME=jonny,ADMIN_PASSWORD=sixpack',note='Create an application from this template, passing in the template parameters to set the admin username and password.')
+		shutit.send('oc delete all --all')
 
-		# TODO: 5.x Templates
+		# A 'pure' build config.
+		shutit.send_file('/tmp/imagestream.json','''
+  {
+      "kind": "ImageStream",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "airflow"
+      },
+      "spec": {},
+      "status": {
+        "dockerImageRepository": ""
+      }
+  }''')
+		shutit.send_file('/tmp/buildconfig.json','''
+  {
+      "kind": "BuildConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "airflow",
+        "labels": {
+          "name": "airflow-build"
+        }
+      },
+      "spec": {
+        "triggers": [
+          {
+            "type": "GitHub",
+            "github": {
+              "secret": "secret101"
+            }
+          },
+          {
+            "type": "Generic",
+            "generic": {
+              "secret": "secret101"
+            }
+          }
+        ],
+        "source": {
+          "type": "Git",
+          "git": {
+            "uri": "https://github.com/ianmiell/shutit-airflow"
+          }
+        },
+        "strategy": {
+          "type": "Docker"
+        },
+        "output": {
+          "to": {
+            "kind": "ImageStreamTag",
+            "name": "airflow:latest"
+          }
+        }
+      }
+    }
+''')
+		shutit.send('oc create -f /tmp/imagestream.json')
+		shutit.send('oc create -f /tmp/buildconfig.json')
+		shutit.send('oc describe buldconfig airflow',note='Ideally you would take this github url, and update your github webhooks for this project. But there is no public URL for this server so we will skip and trigger a build manually.')
+		shutit.send('oc start-build airflow',note='Trigger a build by hand')
+		shutit.send('oc build-logs airflow-1',note='Follow the build and wait for it to terminate')
 
+		# TODO: add deployment config (chapter 7)
+		shutit.send_file('/tmp/deploymentconfig.json','''
+    {
+      "kind": "DeploymentConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "airflow"
+      },
+      "spec": {
+        "strategy": {
+          "type": "Rolling",
+          "rollingParams": {
+            "updatePeriodSeconds": 1,
+            "intervalSeconds": 1,
+            "timeoutSeconds": 120
+          },
+          "resources": {}
+        },
+        "triggers": [
+          {
+            "type": "ImageChange",
+            "imageChangeParams": {
+              "automatic": true,
+              "containerNames": [
+                "nodejs-helloworld"
+              ],
+              "from": {
+                "kind": "ImageStreamTag",
+                "name": "airflow:latest"
+              }
+            }
+          },
+          {
+            "type": "ConfigChange"
+          }
+        ],
+        "replicas": 1,
+        "selector": {
+          "name":"airflow"
+          },
+        "template": {
+          "metadata": {
+            "labels": {
+              "name": "airflow"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "airflow",
+                "image": "airflow",
+                "ports": [
+                  {
+                    "containerPort": 8080,
+                    "protocol": "TCP"
+                  }
+                ],
+                "resources": {},
+                "terminationMessagePath": "/dev/termination-log",
+                "imagePullPolicy": "IfNotPresent",
+                "securityContext": {
+                  "capabilities": {},
+                  "privileged": false
+                }
+              }
+            ],
+            "restartPolicy": "Always",
+            "dnsPolicy": "ClusterFirst"
+          }
+        }
+      },
+      "status": {}
+    }
+''')
+		shutit.send('oc create -f /tmp/deploymentconfig.json')
+
+		# Chapter 11 image pull secrets
 
 		# Chapter 10 Secrets
 		shutit.send('''cat > username << END
@@ -155,6 +296,8 @@ END''',note='create a secret docker.cfg')
 }
 END''')
 		shutit.send('oc create -f secret.json',note='create the secret from the json file')
+		# TODO: use the secret
+		
 		# TODO: cf Examples link in 10.3.2 / 10.5
 
 		# TODO: volumes
