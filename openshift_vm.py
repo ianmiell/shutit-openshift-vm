@@ -80,6 +80,22 @@ class openshift_vm(ShutItModule):
 		shutit.send('vagrant up --provider virtualbox')
 		shutit.login(command='vagrant ssh')
 		shutit.login(command='sudo su -',note='Become root (there is a problem logging in as admin with the vagrant user')
+		# set up nfs share
+		shutit.send('yum install -y nfs-utils system-config-nfs') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
+		shutit.send('systemctl enable rpcbind nfs-server')
+		shutit.send('systemctl start rcpbind')
+		shutit.send('systemctl start nfs-server')
+		shutit.send('mkdir -p /nfs_share')
+		shutit.send('echo "/nfs_share                   localhost.localdomain(ro,sync,no_wdelay,no_subtree_check,nohide)" >> /etc/exports')
+		shutit.send('systemctl restart nfs-server.service')
+		shutit.send('restorecon /etc/exports')
+		shutit.send('systemctl restart nfs-server.service')
+		# client nfs
+		shutit.send('mkdir -p /media/nfs')
+		shutit.send('mount localhost.localdomain:/nfs_share /media/nfs')
+		shutit.send('mount')
+		shutit.send('')
+		shutit.pause_point('')
 		shutit.send('yum install -y socat') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
 		shutit.send('oc whoami',note='Find out who I am logged in as')
 		shutit.send('oc describe users',note='Look up users on the system')
