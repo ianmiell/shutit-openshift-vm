@@ -369,6 +369,31 @@ spec:
 		shutit.send('oc create -f /tmp/pvclaim.json && rm -f /tmp/pvclaim.json')
 		#shutit.send('oc get pv',note='Get our persistent volumes')
 		shutit.send('oc get pvc',note='Get our persistent claims')
+		shutit.send_file('/tmp/create_pod.json','''apiVersion: "v1"
+kind: "Pod"
+metadata:
+  name: "mypod"
+  labels:
+    name: "frontendhttp"
+spec:
+  containers:
+    -
+      name: "myfrontend"
+      image: "nginx"
+      ports:
+        -
+          containerPort: 80
+          name: "http-server"
+      volumeMounts:
+        -
+          mountPath: "/var/www/html"
+          name: "pvol"
+  volumes:
+    -
+      name: "pvol"
+      persistentVolumeClaim:
+        claimName: "claim1"''')
+		shutit.send('oc create -f /tmp/create_pod.json')
 			
 		# EXTRAS	
 		shutit.pause_point('')
