@@ -80,74 +80,95 @@ class openshift_vm(ShutItModule):
 		shutit.send('vagrant up --provider virtualbox')
 		shutit.login(command='vagrant ssh')
 		shutit.login(command='sudo su -',note='Become root (there is a problem logging in as admin with the vagrant user')
+		shutit.send('yum install -y socat') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
+		# PERSISTENT VOLUME SHARES
 		# set up nfs share
 		shutit.send('yum install -y nfs-utils system-config-nfs') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
 		shutit.send('systemctl enable rpcbind nfs-server')
 		shutit.send('systemctl start rcpbind')
 		shutit.send('systemctl start nfs-server')
 		shutit.send('mkdir -p /nfs_share')
-		shutit.send('echo "/nfs_share                   localhost.localdomain(ro,sync,no_wdelay,no_subtree_check,nohide)" >> /etc/exports')
+		shutit.send('echo "/nfs_share                   localhost.localdomain(rw,root_squash)" >> /etc/exports')
+		shutit.send('iptables -I INPUT 1 -p tcp --dport 2049 -j ACCEPT')
 		shutit.send('systemctl restart nfs-server.service')
 		shutit.send('restorecon /etc/exports')
 		shutit.send('systemctl restart nfs-server.service')
 		# client nfs
 		shutit.send('mkdir -p /media/nfs')
 		shutit.send('mount localhost.localdomain:/nfs_share /media/nfs')
-		shutit.send('mount')
-		shutit.send('')
-		shutit.pause_point('')
-		shutit.send('yum install -y socat') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
+		# create persistent volume shares
+		for num in range(1,11):
+			shutit.send_file('''/tmp/nfs.json''','''apiVersion: "v1"
+kind: "PersistentVolume"
+metadata:
+  name: "pv000''' + str(num) + '''" 
+spec:
+  capacity:
+    storage: "5Gi" 
+  accessModes:
+    - "ReadWriteMany" 
+  nfs: 
+    path: "/nfs_share" 
+    server: "localhost" 
+  persistentVolumeReclaimPolicy: "Recycle"''')
+			shutit.send('oc create -f /tmp/nfs.json && rm -f /tmp/nfs.json')
+		# BASIC USAGE
 		shutit.send('oc whoami',note='Find out who I am logged in as')
+		# USERS AND GROUPS
 		shutit.send('oc describe users',note='Look up users on the system')
 		shutit.send('oc describe groups',note='Look up groups on the system')
 		shutit.send('oc describe policybindings',note='Describe the policy of the system (will be useful as we set up users)')
+		# LOGIN
 		shutit.send('oc login -u admin -p anystringwilldo',note='Log in as admin')
 		shutit.send('oc whoami -t',note='Display my login token')
 		shutit.send('TOKEN=$(oc whoami -t)',note='Put token into env variable.')
+		# CREATE PROJECT - BASIC
 		shutit.send('oc new-project hello-openshift --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
 		shutit.send('oc project new-project',note='Switch to that project')
 		shutit.send('oc status',note='Get information about the current project')
-		# Chapter 4 of user guide
-		shutit.send('git clone https://github.com/ianmiell/shutit-airflow',note='Get source code of project w/Dockerfile') #TODO
-		shutit.send('cd ') 
-		shutit.send('oc new-app .',note='Figures out that this is a docker project and builds accordingly.')
-		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
-		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
-
+		#shutit.send('git clone https://github.com/ianmiell/shutit-airflow',note='Get source code of project w/Dockerfile') #TODO
+		#shutit.send('cd ') 
+		#shutit.send('oc new-app .',note='Figures out that this is a docker project and builds accordingly.')
+		#shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
+		#shutit.send('oc delete all --all',note='Delete all entries, for clarity')
+		# CREATE PROJECT - GITHUB
 		shutit.send('oc new-app https://github.com/openshift/sti-ruby.git --context-dir=2.0/test/puma-test-app',note='Create an application from a github project, specifying a directory to work from.')
-		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
-
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
-		shutit.send('oc new-app https://github.com/openshift/ruby-hello-world.git#beta4',note='Create an application from git repo with a branch')
 		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
-
+		# CREATE PROJECT - GITHUB BRANCH
+		shutit.send('oc new-app https://github.com/openshift/ruby-hello-world.git#beta4',note='Create an application from git repo with a branch')
+		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
+		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
+		# CREATE PROJECT - GITHUB + IMAGE SPECIFIED
 		shutit.send('oc new-app openshift/ruby-20-centos7:latest~https://github.com/openshift/ruby-hello-world.git',note="Use a publicly-available builder image to build a git repository's code") # TODO
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
-
+		# CREATE PROJECT - DOCKER IMAGE
 		shutit.send('oc new-app mysql',note='Create an application from a docker image')
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
-
+		# CREATE PROJECT - DOCKER MULTI-IMAGE POD
 		shutit.send('oc new-app nginx+mysql',note='Deploy nginx and mysql to the same pod')
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
-
+		# CREATE PROJECT - DOCKER-MULTI-IMAGE POD + GITHUB + BUILDER IMAGE
 		shutit.send('oc new-app ruby~https://github.com/openshift/ruby-hello-world mysql --group=ruby+mysql',note='Build a ruby image with some code, add a mysql image to the app and place them in the same pod.')
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
 
-		# 4.2.3 Templates
+		# TEMPLATES - 4.2.3 Templates
+		# SIMPLE SAMPLE APP
 		shutit.get_url('application-template-stibuild.json',['https://raw.githubusercontent.com/openshift/origin/master/examples/sample-app'])
 		shutit.send('cat application-template-stibuild.json',note='json to create a ruby application from a template')
 		shutit.send('oc create -f application-template-stibuild.json',note='Load the template into the system')
 		shutit.send('oc new-app ruby-helloworld-sample',note='Create an application from this template')
 		shutit.send('oc delete all --all')
+		# PROCESS TEMPLATES
 		shutit.send('oc process --parameters ruby-helloworld-sample',note='Show the parameters available for this template')
 		shutit.send('oc new-app ruby-helloworld-sample -p ADMIN_USERNAME=jonny,ADMIN_PASSWORD=sixpack',note='Create an application from this template, passing in the template parameters to set the admin username and password.')
 		shutit.send('oc delete all --all')
 
-		# A 'pure' build config.
+		# IMAGE STREAM
 		shutit.send_file('/tmp/imagestream.json','''
   {
       "kind": "ImageStream",
@@ -160,6 +181,8 @@ class openshift_vm(ShutItModule):
         "dockerImageRepository": ""
       }
   }''')
+		shutit.send('oc create -f /tmp/imagestream.json')
+		# BUILD CONFIG
 		shutit.send_file('/tmp/buildconfig.json','''
   {
       "kind": "BuildConfig",
@@ -203,13 +226,13 @@ class openshift_vm(ShutItModule):
       }
     }
 ''')
-		shutit.send('oc create -f /tmp/imagestream.json')
 		shutit.send('oc create -f /tmp/buildconfig.json')
+		# AIRFLOW BUILD
 		shutit.send('oc describe buldconfig airflow',note='Ideally you would take this github url, and update your github webhooks for this project. But there is no public URL for this server so we will skip and trigger a build manually.')
 		shutit.send('oc start-build airflow',note='Trigger a build by hand')
 		shutit.send('oc build-logs airflow-1',note='Follow the build and wait for it to terminate')
 
-		# TODO: add deployment config (chapter 7)
+		# DEPLOYMENT CONFIG
 		shutit.send_file('/tmp/deploymentconfig.json','''
     {
       "kind": "DeploymentConfig",
@@ -287,6 +310,7 @@ class openshift_vm(ShutItModule):
 
 		# Chapter 11 image pull secrets
 
+		# SECRETS
 		# Chapter 10 Secrets
 		shutit.send('''cat > username << END
 mysecretusername
@@ -317,18 +341,37 @@ END''')
 		
 		# TODO: cf Examples link in 10.3.2 / 10.5
 
+		# VOLUMES
 		# TODO: volumes
 		shutit.send('oc volume deploymentconfig --all --name myvolume -t emptyDir -m /mounteddir',note='TODO')
 		shutit.send('oc volume deploymentconfig --all --name mysecretvolume -t secret -m /mountedsecretdir --secret-name mysecret' ,note='TODO')
 		shutit.send('oc volume deploymentconfig --all --list' ,note='List all the volumes we have created')
 
+		# ROLES
 		# TODO: roles etc
 		# oadm policy
 		# oc policy
-		shutit.send('oc get rolebinding',note='')
-		shutit.send('oc get clusterrolebinding',note='')
-		
-		shutit.send('oc ex diagnostics',note='')
+		#shutit.send('oc get rolebinding',note='')
+		#shutit.send('oc get clusterrolebinding',note='')
+
+		# PERSISTENT VOLUME CLAIMS
+		# claim a volume
+		shutit.send_file('/tmp/pvclaim.json','''apiVersion: "v1"
+kind: "PersistentVolumeClaim"
+metadata:
+  name: "claim1"
+spec:
+  accessModes:
+    - "ReadWriteMany"
+  resources:
+    requests:
+      storage: "5Gi"''')
+		shutit.send('oc create -f /tmp/pvclaim.json && rm -f /tmp/pvclaim.json')
+		shutit.send('oc get pvc',note='Get our persistent claims')
+		shutit.send('oc get pv',note='Get our persistent volumes')
+			
+		# EXTRAS	
+		shutit.send('openshift ex diagnostics')
 		shutit.pause_point('')
 		shutit.logout()
 		shutit.logout()
