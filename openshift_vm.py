@@ -84,8 +84,7 @@ class openshift_vm(ShutItModule):
 		# PERSISTENT VOLUME SHARES
 		# set up nfs share
 		shutit.send('yum install -y nfs-utils system-config-nfs') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
-		shutit.send('systemctl enable rpcbind nfs-server')
-		shutit.send('systemctl start rcpbind')
+		shutit.send('systemctl enable nfs-server')
 		shutit.send('systemctl start nfs-server')
 		shutit.send('mkdir -p /nfs_share')
 		shutit.send('echo "/nfs_share                   localhost.localdomain(rw,root_squash)" >> /etc/exports')
@@ -119,12 +118,12 @@ spec:
 		shutit.send('oc describe groups',note='Look up groups on the system')
 		shutit.send('oc describe policybindings',note='Describe the policy of the system (will be useful as we set up users)')
 		# LOGIN
-		shutit.send('oc login -u admin -p anystringwilldo',note='Log in as admin')
+		shutit.send('oc login -u user -p anystringwilldo',note='Log in as user')
 		shutit.send('oc whoami -t',note='Display my login token')
 		shutit.send('TOKEN=$(oc whoami -t)',note='Put token into env variable.')
 		# CREATE PROJECT - BASIC
 		shutit.send('oc new-project hello-openshift --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
-		shutit.send('oc project new-project',note='Switch to that project')
+		shutit.send('oc project hello-openshift',note='Switch to that project')
 		shutit.send('oc status',note='Get information about the current project')
 		#shutit.send('git clone https://github.com/ianmiell/shutit-airflow',note='Get source code of project w/Dockerfile') #TODO
 		#shutit.send('cd ') 
@@ -152,9 +151,10 @@ spec:
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
 		# CREATE PROJECT - DOCKER-MULTI-IMAGE POD + GITHUB + BUILDER IMAGE
-		shutit.send('oc new-app ruby~https://github.com/openshift/ruby-hello-world mysql --group=ruby+mysql',note='Build a ruby image with some code, add a mysql image to the app and place them in the same pod.')
-		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
-		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
+		# TODO: ruby image is not a builder, and --strategy source doesn't work.
+		#shutit.send('oc new-app ruby~https://github.com/openshift/ruby-hello-world mysql --group=ruby+mysql',note='Build a ruby image with some code, add a mysql image to the app and place them in the same pod.')
+		#shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
+		#shutit.send('oc delete all --all',note='Delete all entries, for clarity')
 
 		# TEMPLATES - 4.2.3 Templates
 		# SIMPLE SAMPLE APP
@@ -228,7 +228,7 @@ spec:
 ''')
 		shutit.send('oc create -f /tmp/buildconfig.json')
 		# AIRFLOW BUILD
-		shutit.send('oc describe buldconfig airflow',note='Ideally you would take this github url, and update your github webhooks for this project. But there is no public URL for this server so we will skip and trigger a build manually.')
+		shutit.send('oc describe buildconfig airflow',note='Ideally you would take this github url, and update your github webhooks for this project. But there is no public URL for this server so we will skip and trigger a build manually.')
 		shutit.send('oc start-build airflow',note='Trigger a build by hand')
 		shutit.send('oc build-logs airflow-1',note='Follow the build and wait for it to terminate')
 
@@ -324,28 +324,28 @@ secret
 cfg
 file
 END''',note='create a secret docker.cfg')
-		shutit.send('''cat > secret.json << END
-{
-  "apiversion": "v1",
-  "kind": "secret",
-  "name": "mysecret",
-  "namespace": "hello-openshift",
-  "data": {
- "username": "$(base64 username)",
- "password": "$(base64 password)"
-  }
-}
-END''')
-		shutit.send('oc create -f secret.json',note='create the secret from the json file')
-		# TODO: use the secret
+		# TODO: use the secret and make it work...
+#		shutit.send('''cat > secret.json << END
+#{
+#  "apiversion": "v1",
+#  "kind": "secret",
+#  "name": "mysecret",
+#  "namespace": "hello-openshift",
+#  "data": {
+# "username": "$(base64 username)",
+# "password": "$(base64 password)"
+#  }
+#}
+#END''')
+#		shutit.send('oc create -f secret.json',note='create the secret from the json file')
 		
 		# TODO: cf Examples link in 10.3.2 / 10.5
 
 		# VOLUMES
 		# TODO: volumes
-		shutit.send('oc volume deploymentconfig --all --name myvolume -t emptyDir -m /mounteddir',note='TODO')
-		shutit.send('oc volume deploymentconfig --all --name mysecretvolume -t secret -m /mountedsecretdir --secret-name mysecret' ,note='TODO')
-		shutit.send('oc volume deploymentconfig --all --list' ,note='List all the volumes we have created')
+		#shutit.send('oc volume deploymentconfig --all --name myvolume -t emptyDir -m /mounteddir',note='TODO')
+		#shutit.send('oc volume deploymentconfig --all --name mysecretvolume -t secret -m /mountedsecretdir --secret-name mysecret' ,note='TODO')
+		#shutit.send('oc volume deploymentconfig --all --list' ,note='List all the volumes we have created')
 
 		# ROLES
 		# TODO: roles etc
@@ -367,12 +367,12 @@ spec:
     requests:
       storage: "5Gi"''')
 		shutit.send('oc create -f /tmp/pvclaim.json && rm -f /tmp/pvclaim.json')
+		#shutit.send('oc get pv',note='Get our persistent volumes')
 		shutit.send('oc get pvc',note='Get our persistent claims')
-		shutit.send('oc get pv',note='Get our persistent volumes')
 			
 		# EXTRAS	
-		shutit.send('openshift ex diagnostics')
 		shutit.pause_point('')
+		shutit.send('openshift ex diagnostics')
 		shutit.logout()
 		shutit.logout()
 # From: pkg/authorization/api/types.go
