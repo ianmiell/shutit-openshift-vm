@@ -116,6 +116,24 @@ spec:
   persistentVolumeReclaimPolicy: "Recycle"''')
 			shutit.send('oc create -f /tmp/nfs.yml')
 			shutit.send('oc create -f /tmp/nfs.yml && rm -f /tmp/nfs.yml')
+		# BASIC USAGE
+		shutit.send('oc whoami',note='Find out who I am logged in as')
+		# USERS AND GROUPS
+		shutit.send('oc describe users',note='Look up users on the system')
+		shutit.send('oc describe groups',note='Look up groups on the system')
+		shutit.send('oc describe policybindings',note='Describe the policy of the system (will be useful as we set up users)')
+		# LOGIN
+		shutit.send('oc login -u user1 -p anystringwilldo',note='Log in as user1')
+		shutit.send('oc whoami -t',note='Display my login token')
+		shutit.send('TOKEN=$(oc whoami -t)',note='Put token into env variable.')
+		shutit.send('oc new-project hello-openshift1 --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
+		shutit.send('oc project hello-openshift1',note='Switch to that project')
+		shutit.send('oc status',note='Get information about the current project')
+		shutit.send('oc login -u user2 -p anystringwilldo',note='Log in as user2')
+		shutit.send('oc new-project hello-openshift2 --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
+		shutit.send('oc project hello-openshift2',note='Switch to that project')
+		shutit.send('oc status',note='Get information about the current project')
+		shutit.send('oc login -u user1 -p anystringwilldo',note='Log in as user1')
 		# PERSISTENT VOLUME CLAIMS
 		# claim a volume
 		shutit.send_file('/tmp/pvclaim.yml','''apiVersion: "v1"
@@ -158,25 +176,8 @@ spec:
       persistentVolumeClaim:
         claimName: "claim1"''')
 		shutit.send('oc create -f /tmp/create_pod.json')
-		# BASIC USAGE
-		shutit.send('oc whoami',note='Find out who I am logged in as')
-		# USERS AND GROUPS
-		shutit.send('oc describe users',note='Look up users on the system')
-		shutit.send('oc describe groups',note='Look up groups on the system')
-		shutit.send('oc describe policybindings',note='Describe the policy of the system (will be useful as we set up users)')
-		# LOGIN
-		shutit.send('oc login -u user1 -p anystringwilldo',note='Log in as user1')
-		shutit.send('oc whoami -t',note='Display my login token')
-		shutit.send('TOKEN=$(oc whoami -t)',note='Put token into env variable.')
+
 		# CREATE PROJECT - BASIC
-		shutit.send('oc new-project hello-openshift1 --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
-		shutit.send('oc project hello-openshift1',note='Switch to that project')
-		shutit.send('oc status',note='Get information about the current project')
-		shutit.send('oc login -u user2 -p anystringwilldo',note='Log in as user2')
-		shutit.send('oc new-project hello-openshift2 --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
-		shutit.send('oc project hello-openshift2',note='Switch to that project')
-		shutit.send('oc status',note='Get information about the current project')
-		shutit.send('oc login -u user1 -p anystringwilldo',note='Log in as user1')
 		#shutit.send('git clone https://github.com/ianmiell/shutit-airflow',note='Get source code of project w/Dockerfile') #TODO
 		#shutit.send('cd ') 
 		#shutit.send('oc new-app .',note='Figures out that this is a docker project and builds accordingly.')
