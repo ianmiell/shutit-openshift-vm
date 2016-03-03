@@ -89,19 +89,19 @@ class openshift_vm(ShutItModule):
 		shutit.send('systemctl start rpcbind')
 		shutit.send('mkdir -p /nfs_share')
 		shutit.send('chmod 770 /nfs_share')
-		shutit.send('chgrp vagrant /nfs_share')
-		shutit.send('echo "/nfs_share                   origin(rw,root_squash)" >> /etc/exports')
+		for num in range(1,3):
+			shutit.send('mkdir -p /nfs_share_' + str(num))
+			shutit.send('echo "/nfs_share_' + str(num) + '                   origin(rw,root_squash)" >> /etc/exports')
+			shutit.send('chgrp vagrant /nfs_share_' + str(num))
 		shutit.send('iptables -I INPUT 1 -p tcp --dport 2049 -j ACCEPT')
 		shutit.send('systemctl restart nfs-server.service')
 		shutit.send('restorecon /etc/exports')
 		shutit.send('systemctl restart nfs-server.service')
-		shutit.send('systemctl start rpcbind')
-		# client nfs
-		#shutit.send('mkdir -p /media/nfs')
-		#shutit.send('mount origin:/nfs_share /media/nfs')
+		shutit.send('systemctl restart rpcbind')
+		# TODO: different kinds of volumes
 		# create persistent volume shares
 		for num in range(1,10):
-			shutit.send_file('''/tmp/nfs.json''','''apiVersion: "v1"
+			shutit.send_file('''/tmp/nfs.yml''','''apiVersion: "v1"
 kind: "PersistentVolume"
 metadata:
   name: "pv000''' + str(num) + '''" 
@@ -111,10 +111,53 @@ spec:
   accessModes:
     - "ReadWriteOnce" 
   nfs: 
-    path: "/nfs_share" 
+    path: "/nfs_share_" ''' + str(num) + '''
     server: "localhost" 
   persistentVolumeReclaimPolicy: "Recycle"''')
-			shutit.send('oc create -f /tmp/nfs.json')
+			shutit.send('oc create -f /tmp/nfs.yml')
+			shutit.send('oc create -f /tmp/nfs.yml && rm -f /tmp/nfs.yml')
+		# PERSISTENT VOLUME CLAIMS
+		# claim a volume
+		shutit.send_file('/tmp/pvclaim.yml','''apiVersion: "v1"
+kind: "PersistentVolumeClaim"
+metadata:
+  name: "claim1"
+spec:
+  accessModes:
+    - "ReadWriteMany"
+  resources:
+    requests:
+      storage: "5Gi"''')
+		shutit.send('oc create -f /tmp/pvclaim.yml')
+		#shutit.send('oc get pv',note='Get our persistent volumes')
+		shutit.send('oc get pvc',note='Get our persistent claims')
+		shutit.send_file('/tmp/create_pod.yml','''apiVersion: "v1"
+kind: "Pod"
+metadata:
+  name: "mypod"
+  labels:
+    name: "frontendhttp"
+spec:
+  containers:
+    -
+      name: "myfrontend"
+      image: "nginx"
+      ports:
+        -
+          containerPort: 80
+          name: "http-server"
+      volumeMounts:
+        -
+          mountPath: "/var/www/html"
+          name: "pvol"
+  securityContext:
+    supplementalGroups: [1001]
+  volumes:
+    -
+      name: "pvol"
+      persistentVolumeClaim:
+        claimName: "claim1"''')
+		shutit.send('oc create -f /tmp/create_pod.json')
 		# BASIC USAGE
 		shutit.send('oc whoami',note='Find out who I am logged in as')
 		# USERS AND GROUPS
@@ -363,91 +406,6 @@ END''',note='create a secret docker.cfg')
 		# oc policy
 		#shutit.send('oc get rolebinding',note='')
 		#shutit.send('oc get clusterrolebinding',note='')
-
-		# PERSISTENT VOLUME CLAIMS
-		# claim a volume
-		shutit.send_file('/tmp/pvclaim.json','''apiVersion: "v1"
-kind: "PersistentVolumeClaim"
-metadata:
-  name: "claim1"
-spec:
-  accessModes:
-    - "ReadWriteMany"
-  resources:
-    requests:
-      storage: "5Gi"''')
-		shutit.send('oc create -f /tmp/pvclaim.json')
-		#shutit.send('oc get pv',note='Get our persistent volumes')
-		shutit.send('oc get pvc',note='Get our persistent claims')
-		shutit.send_file('/tmp/create_pod.json','''apiVersion: "v1"
-kind: "Pod"
-metadata:
-  name: "mypod"
-  labels:
-    name: "frontendhttp"
-spec:
-  containers:
-    -
-      name: "myfrontend"
-      image: "nginx"
-      ports:
-        -
-          containerPort: 80
-          name: "http-server"
-      volumeMounts:
-        -
-          mountPath: "/var/www/html"
-          name: "pvol"
-  securityContext:
-    supplementalGroups: [1001]
-  volumes:
-    -
-      name: "pvol"
-      persistentVolumeClaim:
-        claimName: "claim1"''')
-		shutit.send('oc create -f /tmp/create_pod.json')
-
-		shutit.send('oc login -u user2 -p anystringwilldo',note='Log in as user2')
-		shutit.send_file('/tmp/pvclaim.json','''apiVersion: "v1"
-kind: "PersistentVolumeClaim"
-metadata:
-  name: "claim1"
-spec:
-  accessModes:
-    - "ReadWriteMany"
-  resources:
-    requests:
-      storage: "5Gi"''')
-		shutit.send('oc create -f /tmp/pvclaim.json')
-		#shutit.send('oc get pv',note='Get our persistent volumes')
-		shutit.send('oc get pvc',note='Get our persistent claims')
-		shutit.send_file('/tmp/create_pod.json','''apiVersion: "v1"
-kind: "Pod"
-metadata:
-  name: "mypod"
-  labels:
-    name: "frontendhttp"
-spec:
-  containers:
-    -
-      name: "myfrontend"
-      image: "nginx"
-      ports:
-        -
-          containerPort: 80
-          name: "http-server"
-      volumeMounts:
-        -
-          mountPath: "/var/www/html"
-          name: "pvol"
-  securityContext:
-    supplementalGroups: [1001]
-  volumes:
-    -
-      name: "pvol"
-      persistentVolumeClaim:
-        claimName: "claim1"''')
-		shutit.send('oc create -f /tmp/create_pod.json')
 
 		# EXTRAS
 		shutit.pause_point('')
