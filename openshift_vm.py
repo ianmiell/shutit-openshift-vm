@@ -80,23 +80,27 @@ class openshift_vm(ShutItModule):
 		shutit.send('vagrant up --provider virtualbox')
 		shutit.login(command='vagrant ssh')
 		shutit.login(command='sudo su -',note='Become root (there is a problem logging in as admin with the vagrant user')
-		shutit.send('yum install -y socat') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
+		shutit.send('dnf install -y socat') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
 		# PERSISTENT VOLUME SHARES
 		# set up nfs share
-		shutit.send('yum install -y nfs-utils system-config-nfs') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
-		shutit.send('systemctl enable nfs-server')
+		shutit.send('dnf install -y nfs-utils system-config-nfs') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
+		shutit.send('systemctl enable nfs-server rpcbind')
 		shutit.send('systemctl start nfs-server')
+		shutit.send('systemctl start rpcbind')
 		shutit.send('mkdir -p /nfs_share')
-		shutit.send('echo "/nfs_share                   localhost.localdomain(rw,root_squash)" >> /etc/exports')
+		shutit.send('chmod 770 /nfs_share')
+		shutit.send('chgrp vagrant /nfs_share')
+		shutit.send('echo "/nfs_share                   origin(rw,root_squash)" >> /etc/exports')
 		shutit.send('iptables -I INPUT 1 -p tcp --dport 2049 -j ACCEPT')
 		shutit.send('systemctl restart nfs-server.service')
 		shutit.send('restorecon /etc/exports')
 		shutit.send('systemctl restart nfs-server.service')
+		shutit.send('systemctl start rpcbind')
 		# client nfs
-		shutit.send('mkdir -p /media/nfs')
-		shutit.send('mount localhost.localdomain:/nfs_share /media/nfs')
+		#shutit.send('mkdir -p /media/nfs')
+		#shutit.send('mount origin:/nfs_share /media/nfs')
 		# create persistent volume shares
-		for num in range(1,11):
+		for num in range(1,10):
 			shutit.send_file('''/tmp/nfs.json''','''apiVersion: "v1"
 kind: "PersistentVolume"
 metadata:
@@ -105,12 +109,12 @@ spec:
   capacity:
     storage: "5Gi" 
   accessModes:
-    - "ReadWriteMany" 
+    - "ReadWriteOnce" 
   nfs: 
     path: "/nfs_share" 
     server: "localhost" 
   persistentVolumeReclaimPolicy: "Recycle"''')
-			shutit.send('oc create -f /tmp/nfs.json && rm -f /tmp/nfs.json')
+			shutit.send('oc create -f /tmp/nfs.json')
 		# BASIC USAGE
 		shutit.send('oc whoami',note='Find out who I am logged in as')
 		# USERS AND GROUPS
@@ -118,13 +122,18 @@ spec:
 		shutit.send('oc describe groups',note='Look up groups on the system')
 		shutit.send('oc describe policybindings',note='Describe the policy of the system (will be useful as we set up users)')
 		# LOGIN
-		shutit.send('oc login -u user -p anystringwilldo',note='Log in as user')
+		shutit.send('oc login -u user1 -p anystringwilldo',note='Log in as user1')
 		shutit.send('oc whoami -t',note='Display my login token')
 		shutit.send('TOKEN=$(oc whoami -t)',note='Put token into env variable.')
 		# CREATE PROJECT - BASIC
-		shutit.send('oc new-project hello-openshift --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
-		shutit.send('oc project hello-openshift',note='Switch to that project')
+		shutit.send('oc new-project hello-openshift1 --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
+		shutit.send('oc project hello-openshift1',note='Switch to that project')
 		shutit.send('oc status',note='Get information about the current project')
+		shutit.send('oc login -u user2 -p anystringwilldo',note='Log in as user2')
+		shutit.send('oc new-project hello-openshift2 --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
+		shutit.send('oc project hello-openshift2',note='Switch to that project')
+		shutit.send('oc status',note='Get information about the current project')
+		shutit.send('oc login -u user1 -p anystringwilldo',note='Log in as user1')
 		#shutit.send('git clone https://github.com/ianmiell/shutit-airflow',note='Get source code of project w/Dockerfile') #TODO
 		#shutit.send('cd ') 
 		#shutit.send('oc new-app .',note='Figures out that this is a docker project and builds accordingly.')
@@ -228,9 +237,10 @@ spec:
 ''')
 		shutit.send('oc create -f /tmp/buildconfig.json')
 		# AIRFLOW BUILD
-		shutit.send('oc describe buildconfig airflow',note='Ideally you would take this github url, and update your github webhooks for this project. But there is no public URL for this server so we will skip and trigger a build manually.')
-		shutit.send('oc start-build airflow',note='Trigger a build by hand')
-		shutit.send('oc build-logs airflow-1',note='Follow the build and wait for it to terminate')
+		# Takes too long.
+		#shutit.send('oc describe buildconfig airflow',note='Ideally you would take this github url, and update your github webhooks for this project. But there is no public URL for this server so we will skip and trigger a build manually.')
+		#shutit.send('oc start-build airflow',note='Trigger a build by hand')
+		#shutit.send('sleep 60 && oc logs -f build/airflow-1',note='Follow the build and wait for it to terminate')
 
 		# DEPLOYMENT CONFIG
 		shutit.send_file('/tmp/deploymentconfig.json','''
@@ -366,7 +376,7 @@ spec:
   resources:
     requests:
       storage: "5Gi"''')
-		shutit.send('oc create -f /tmp/pvclaim.json && rm -f /tmp/pvclaim.json')
+		shutit.send('oc create -f /tmp/pvclaim.json')
 		#shutit.send('oc get pv',note='Get our persistent volumes')
 		shutit.send('oc get pvc',note='Get our persistent claims')
 		shutit.send_file('/tmp/create_pod.json','''apiVersion: "v1"
@@ -388,16 +398,60 @@ spec:
         -
           mountPath: "/var/www/html"
           name: "pvol"
+  securityContext:
+    supplementalGroups: [1001]
   volumes:
     -
       name: "pvol"
       persistentVolumeClaim:
         claimName: "claim1"''')
 		shutit.send('oc create -f /tmp/create_pod.json')
-			
-		# EXTRAS	
+
+		shutit.send('oc login -u user2 -p anystringwilldo',note='Log in as user2')
+		shutit.send_file('/tmp/pvclaim.json','''apiVersion: "v1"
+kind: "PersistentVolumeClaim"
+metadata:
+  name: "claim1"
+spec:
+  accessModes:
+    - "ReadWriteMany"
+  resources:
+    requests:
+      storage: "5Gi"''')
+		shutit.send('oc create -f /tmp/pvclaim.json')
+		#shutit.send('oc get pv',note='Get our persistent volumes')
+		shutit.send('oc get pvc',note='Get our persistent claims')
+		shutit.send_file('/tmp/create_pod.json','''apiVersion: "v1"
+kind: "Pod"
+metadata:
+  name: "mypod"
+  labels:
+    name: "frontendhttp"
+spec:
+  containers:
+    -
+      name: "myfrontend"
+      image: "nginx"
+      ports:
+        -
+          containerPort: 80
+          name: "http-server"
+      volumeMounts:
+        -
+          mountPath: "/var/www/html"
+          name: "pvol"
+  securityContext:
+    supplementalGroups: [1001]
+  volumes:
+    -
+      name: "pvol"
+      persistentVolumeClaim:
+        claimName: "claim1"''')
+		shutit.send('oc create -f /tmp/create_pod.json')
+
+		# EXTRAS
 		shutit.pause_point('')
-		shutit.send('openshift ex diagnostics')
+		#shutit.send('openshift ex diagnostics')
 		shutit.logout()
 		shutit.logout()
 # From: pkg/authorization/api/types.go
