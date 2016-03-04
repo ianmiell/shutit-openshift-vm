@@ -100,8 +100,8 @@ class openshift_vm(ShutItModule):
 		shutit.send('systemctl restart rpcbind')
 		# TODO: different kinds of volumes
 		# create persistent volume shares
-		for num in range(1,10):
-			shutit.send_file('''/tmp/nfs.yml''','''apiVersion: "v1"
+		for num in range(1,3):
+			shutit.send_file('/tmp/nfs_' + str(num) + '.yml''','''apiVersion: "v1"
 kind: "PersistentVolume"
 metadata:
   name: "pv000''' + str(num) + '''" 
@@ -111,11 +111,10 @@ spec:
   accessModes:
     - "ReadWriteOnce" 
   nfs: 
-    path: "/nfs_share_" ''' + str(num) + '''
+    path: "/nfs_share_''' + str(num) + '''"
     server: "localhost" 
   persistentVolumeReclaimPolicy: "Recycle"''')
-			shutit.send('oc create -f /tmp/nfs.yml')
-			shutit.send('oc create -f /tmp/nfs.yml && rm -f /tmp/nfs.yml')
+			shutit.send('oc create -f /tmp/nfs_' + str(num) + '.yml')
 		# BASIC USAGE
 		shutit.send('oc whoami',note='Find out who I am logged in as')
 		# USERS AND GROUPS
@@ -133,10 +132,11 @@ spec:
 		shutit.send('oc new-project hello-openshift2 --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
 		shutit.send('oc project hello-openshift2',note='Switch to that project')
 		shutit.send('oc status',note='Get information about the current project')
-		shutit.send('oc login -u user1 -p anystringwilldo',note='Log in as user1')
-		# PERSISTENT VOLUME CLAIMS
-		# claim a volume
-		shutit.send_file('/tmp/pvclaim.yml','''apiVersion: "v1"
+		for user in range(1,3):
+			shutit.send('oc login -u user' + str(user) + ' -p anystringwilldo',note='Log in as user' + str(user))
+			# PERSISTENT VOLUME CLAIMS
+			# claim a volume
+			shutit.send_file('/tmp/pvclaim.yml','''apiVersion: "v1"
 kind: "PersistentVolumeClaim"
 metadata:
   name: "claim1"
@@ -146,10 +146,10 @@ spec:
   resources:
     requests:
       storage: "5Gi"''')
-		shutit.send('oc create -f /tmp/pvclaim.yml')
-		#shutit.send('oc get pv',note='Get our persistent volumes')
-		shutit.send('oc get pvc',note='Get our persistent claims')
-		shutit.send_file('/tmp/create_pod.yml','''apiVersion: "v1"
+			shutit.send('oc create -f /tmp/pvclaim.yml')
+			#shutit.send('oc get pv',note='Get our persistent volumes')
+			shutit.send('oc get pvc',note='Get our persistent claims')
+			shutit.send_file('/tmp/create_pod.yml','''apiVersion: "v1"
 kind: "Pod"
 metadata:
   name: "mypod"
@@ -175,7 +175,8 @@ spec:
       name: "pvol"
       persistentVolumeClaim:
         claimName: "claim1"''')
-		shutit.send('oc create -f /tmp/create_pod.json')
+			shutit.send('oc create -f /tmp/create_pod.yml')
+		shutit.pause_point('')
 
 		# CREATE PROJECT - BASIC
 		#shutit.send('git clone https://github.com/ianmiell/shutit-airflow',note='Get source code of project w/Dockerfile') #TODO
