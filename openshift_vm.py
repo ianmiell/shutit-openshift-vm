@@ -80,41 +80,8 @@ class openshift_vm(ShutItModule):
 		shutit.send('vagrant up --provider virtualbox')
 		shutit.login(command='vagrant ssh')
 		shutit.login(command='sudo su -',note='Become root (there is a problem logging in as admin with the vagrant user')
+
 		shutit.send('dnf install -y socat') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
-		# PERSISTENT VOLUME SHARES
-		# set up nfs share
-		shutit.send('dnf install -y nfs-utils system-config-nfs') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
-		shutit.send('systemctl enable nfs-server rpcbind')
-		shutit.send('systemctl start nfs-server')
-		shutit.send('systemctl start rpcbind')
-		shutit.send('mkdir -p /nfs_share')
-		shutit.send('chmod 770 /nfs_share')
-		for num in range(1,3):
-			shutit.send('mkdir -p /nfs_share_' + str(num))
-			shutit.send('echo "/nfs_share_' + str(num) + '                   origin(rw,root_squash)" >> /etc/exports')
-			shutit.send('chgrp vagrant /nfs_share_' + str(num))
-		shutit.send('iptables -I INPUT 1 -p tcp --dport 2049 -j ACCEPT')
-		shutit.send('systemctl restart nfs-server.service')
-		shutit.send('restorecon /etc/exports')
-		shutit.send('systemctl restart nfs-server.service')
-		shutit.send('systemctl restart rpcbind')
-		# TODO: different kinds of volumes
-		# create persistent volume shares
-		for num in range(1,3):
-			shutit.send_file('/tmp/nfs_' + str(num) + '.yml''','''apiVersion: "v1"
-kind: "PersistentVolume"
-metadata:
-  name: "pv000''' + str(num) + '''" 
-spec:
-  capacity:
-    storage: "5Gi" 
-  accessModes:
-    - "ReadWriteOnce" 
-  nfs: 
-    path: "/nfs_share_''' + str(num) + '''"
-    server: "localhost" 
-  persistentVolumeReclaimPolicy: "Recycle"''')
-			shutit.send('oc create -f /tmp/nfs_' + str(num) + '.yml')
 		# BASIC USAGE
 		shutit.send('oc whoami',note='Find out who I am logged in as')
 		# USERS AND GROUPS
@@ -125,90 +92,187 @@ spec:
 		shutit.send('oc login -u user1 -p anystringwilldo',note='Log in as user1')
 		shutit.send('oc whoami -t',note='Display my login token')
 		shutit.send('TOKEN=$(oc whoami -t)',note='Put token into env variable.')
-		shutit.send('oc new-project hello-openshift1 --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
-		shutit.send('oc project hello-openshift1',note='Switch to that project')
+		shutit.send('oc new-project user1 --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
+		shutit.send('oc project user1',note='Switch to that project')
 		shutit.send('oc status',note='Get information about the current project')
 		shutit.send('oc login -u user2 -p anystringwilldo',note='Log in as user2')
-		shutit.send('oc new-project hello-openshift2 --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
-		shutit.send('oc project hello-openshift2',note='Switch to that project')
+		shutit.send('oc new-project user2 --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
+		shutit.send('oc project user2',note='Switch to that project')
 		shutit.send('oc status',note='Get information about the current project')
-		for user in range(1,3):
-			shutit.send('oc login -u user' + str(user) + ' -p anystringwilldo',note='Log in as user' + str(user))
-			# PERSISTENT VOLUME CLAIMS
-			# claim a volume
-			shutit.send_file('/tmp/pvclaim.yml','''apiVersion: "v1"
-kind: "PersistentVolumeClaim"
-metadata:
-  name: "claim1"
-spec:
-  accessModes:
-    - "ReadWriteMany"
-  resources:
-    requests:
-      storage: "5Gi"''')
-			shutit.send('oc create -f /tmp/pvclaim.yml')
-			#shutit.send('oc get pv',note='Get our persistent volumes')
-			shutit.send('oc get pvc',note='Get our persistent claims')
-			shutit.send_file('/tmp/create_pod.yml','''apiVersion: "v1"
-kind: "Pod"
-metadata:
-  name: "mypod"
-  labels:
-    name: "frontendhttp"
-spec:
-  containers:
-    -
-      name: "myfrontend"
-      image: "nginx"
-      ports:
-        -
-          containerPort: 80
-          name: "http-server"
-      volumeMounts:
-        -
-          mountPath: "/var/www/html"
-          name: "pvol"
-  securityContext:
-    supplementalGroups: [1001]
-  volumes:
-    -
-      name: "pvol"
-      persistentVolumeClaim:
-        claimName: "claim1"''')
-			shutit.send('oc create -f /tmp/create_pod.yml')
-		shutit.pause_point('')
-
-		# CREATE PROJECT - BASIC
+		# CREATE APP - BASIC
 		#shutit.send('git clone https://github.com/ianmiell/shutit-airflow',note='Get source code of project w/Dockerfile') #TODO
-		#shutit.send('cd ') 
+		#shutit.send('cd ')
 		#shutit.send('oc new-app .',note='Figures out that this is a docker project and builds accordingly.')
 		#shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		#shutit.send('oc delete all --all',note='Delete all entries, for clarity')
-		# CREATE PROJECT - GITHUB
+
+		
+
+		# CREATE APP - GITHUB
 		shutit.send('oc new-app https://github.com/openshift/sti-ruby.git --context-dir=2.0/test/puma-test-app',note='Create an application from a github project, specifying a directory to work from.')
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
-		# CREATE PROJECT - GITHUB BRANCH
+		# CREATE APP - GITHUB BRANCH
 		shutit.send('oc new-app https://github.com/openshift/ruby-hello-world.git#beta4',note='Create an application from git repo with a branch')
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
-		# CREATE PROJECT - GITHUB + IMAGE SPECIFIED
+		# CREATE APP - GITHUB + IMAGE SPECIFIED
 		shutit.send('oc new-app openshift/ruby-20-centos7:latest~https://github.com/openshift/ruby-hello-world.git',note="Use a publicly-available builder image to build a git repository's code") # TODO
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
-		# CREATE PROJECT - DOCKER IMAGE
+		# CREATE APP - DOCKER IMAGE
 		shutit.send('oc new-app mysql',note='Create an application from a docker image')
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
-		# CREATE PROJECT - DOCKER MULTI-IMAGE POD
+		# CREATE APP - DOCKER MULTI-IMAGE POD
 		shutit.send('oc new-app nginx+mysql',note='Deploy nginx and mysql to the same pod')
 		shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
 		shutit.send('oc delete all --all',note='Delete all entries, for clarity')
-		# CREATE PROJECT - DOCKER-MULTI-IMAGE POD + GITHUB + BUILDER IMAGE
+		# CREATE APP - DOCKER-MULTI-IMAGE POD + GITHUB + BUILDER IMAGE
 		# TODO: ruby image is not a builder, and --strategy source doesn't work.
 		#shutit.send('oc new-app ruby~https://github.com/openshift/ruby-hello-world mysql --group=ruby+mysql',note='Build a ruby image with some code, add a mysql image to the app and place them in the same pod.')
 		#shutit.send('oc get all',note='Retrieve information about central items in this project. Our new application is there.') #description TODO
-		#shutit.send('oc delete all --all',note='Delete all entries, for clarity')
+
+		# CREATE APP - DOCKERFILE BINARY SOURCE
+		shutit.send_file('application-template-binary.json',r'''
+{
+  "kind": "Template",
+  "apiVersion": "v1",
+  "metadata": {
+    "name": "centos7-dockerfile-local",
+    "creationTimestamp": null,
+    "annotations": {
+      "description": "This example shows how to create a simple ruby application in openshift origin v3"
+    }
+  },
+  "objects": [
+    {
+      "kind": "Service",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "frontend",
+        "creationTimestamp": null
+      },
+      "spec": {
+        "ports": [
+          {
+            "name": "web",
+            "protocol": "TCP",
+            "port": 5432,
+            "targetPort": 8080,
+            "nodePort": 0
+          }
+        ],
+        "selector": {
+          "name": "frontend"
+        },
+        "portalIP": "",
+        "type": "ClusterIP",
+        "sessionAffinity": "None"
+      },
+      "status": {
+        "loadBalancer": {}
+      }
+    },
+    {
+      "kind": "Route",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "route-edge",
+        "creationTimestamp": null
+      },
+      "spec": {
+        "host": "www.example.com",
+        "to": {
+          "kind": "Service",
+          "name": "frontend"
+        },
+        "tls": {
+          "termination": "edge",
+          "certificate": "-----BEGIN CERTIFICATE-----\nMIIDIjCCAgqgAwIBAgIBATANBgkqhkiG9w0BAQUFADCBoTELMAkGA1UEBhMCVVMx\nCzAJBgNVBAgMAlNDMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkxHDAaBgNVBAoME0Rl\nZmF1bHQgQ29tcGFueSBMdGQxEDAOBgNVBAsMB1Rlc3QgQ0ExGjAYBgNVBAMMEXd3\ndy5leGFtcGxlY2EuY29tMSIwIAYJKoZIhvcNAQkBFhNleGFtcGxlQGV4YW1wbGUu\nY29tMB4XDTE1MDExMjE0MTk0MVoXDTE2MDExMjE0MTk0MVowfDEYMBYGA1UEAwwP\nd3d3LmV4YW1wbGUuY29tMQswCQYDVQQIDAJTQzELMAkGA1UEBhMCVVMxIjAgBgkq\nhkiG9w0BCQEWE2V4YW1wbGVAZXhhbXBsZS5jb20xEDAOBgNVBAoMB0V4YW1wbGUx\nEDAOBgNVBAsMB0V4YW1wbGUwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAMrv\ngu6ZTTefNN7jjiZbS/xvQjyXjYMN7oVXv76jbX8gjMOmg9m0xoVZZFAE4XyQDuCm\n47VRx5Qrf/YLXmB2VtCFvB0AhXr5zSeWzPwaAPrjA4ebG+LUo24ziS8KqNxrFs1M\nmNrQUgZyQC6XIe1JHXc9t+JlL5UZyZQC1IfaJulDAgMBAAGjDTALMAkGA1UdEwQC\nMAAwDQYJKoZIhvcNAQEFBQADggEBAFCi7ZlkMnESvzlZCvv82Pq6S46AAOTPXdFd\nTMvrh12E1sdVALF1P1oYFJzG1EiZ5ezOx88fEDTW+Lxb9anw5/KJzwtWcfsupf1m\nV7J0D3qKzw5C1wjzYHh9/Pz7B1D0KthQRATQCfNf8s6bbFLaw/dmiIUhHLtIH5Qc\nyfrejTZbOSP77z8NOWir+BWWgIDDB2//3AkDIQvT20vmkZRhkqSdT7et4NmXOX/j\njhPti4b2Fie0LeuvgaOdKjCpQQNrYthZHXeVlOLRhMTSk3qUczenkKTOhvP7IS9q\n+Dzv5hqgSfvMG392KWh5f8xXfJNs4W5KLbZyl901MeReiLrPH3w=\n-----END CERTIFICATE-----",
+          "key": "-----BEGIN PRIVATE KEY-----\nMIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAMrvgu6ZTTefNN7j\njiZbS/xvQjyXjYMN7oVXv76jbX8gjMOmg9m0xoVZZFAE4XyQDuCm47VRx5Qrf/YL\nXmB2VtCFvB0AhXr5zSeWzPwaAPrjA4ebG+LUo24ziS8KqNxrFs1MmNrQUgZyQC6X\nIe1JHXc9t+JlL5UZyZQC1IfaJulDAgMBAAECgYEAnxOjEj/vrLNLMZE1Q9H7PZVF\nWdP/JQVNvQ7tCpZ3ZdjxHwkvf//aQnuxS5yX2Rnf37BS/TZu+TIkK4373CfHomSx\nUTAn2FsLmOJljupgGcoeLx5K5nu7B7rY5L1NHvdpxZ4YjeISrRtEPvRakllENU5y\ngJE8c2eQOx08ZSRE4TkCQQD7dws2/FldqwdjJucYijsJVuUdoTqxP8gWL6bB251q\nelP2/a6W2elqOcWId28560jG9ZS3cuKvnmu/4LG88vZFAkEAzphrH3673oTsHN+d\nuBd5uyrlnGjWjuiMKv2TPITZcWBjB8nJDSvLneHF59MYwejNNEof2tRjgFSdImFH\nmi995wJBAMtPjW6wiqRz0i41VuT9ZgwACJBzOdvzQJfHgSD9qgFb1CU/J/hpSRIM\nkYvrXK9MbvQFvG6x4VuyT1W8mpe1LK0CQAo8VPpffhFdRpF7psXLK/XQ/0VLkG3O\nKburipLyBg/u9ZkaL0Ley5zL5dFBjTV2Qkx367Ic2b0u9AYTCcgi2DsCQQD3zZ7B\nv7BOm7MkylKokY2MduFFXU0Bxg6pfZ7q3rvg8gqhUFbaMStPRYg6myiDiW/JfLhF\nTcFT4touIo7oriFJ\n-----END PRIVATE KEY-----",
+          "caCertificate": "-----BEGIN CERTIFICATE-----\nMIIEFzCCAv+gAwIBAgIJALK1iUpF2VQLMA0GCSqGSIb3DQEBBQUAMIGhMQswCQYD\nVQQGEwJVUzELMAkGA1UECAwCU0MxFTATBgNVBAcMDERlZmF1bHQgQ2l0eTEcMBoG\nA1UECgwTRGVmYXVsdCBDb21wYW55IEx0ZDEQMA4GA1UECwwHVGVzdCBDQTEaMBgG\nA1UEAwwRd3d3LmV4YW1wbGVjYS5jb20xIjAgBgkqhkiG9w0BCQEWE2V4YW1wbGVA\nZXhhbXBsZS5jb20wHhcNMTUwMTEyMTQxNTAxWhcNMjUwMTA5MTQxNTAxWjCBoTEL\nMAkGA1UEBhMCVVMxCzAJBgNVBAgMAlNDMRUwEwYDVQQHDAxEZWZhdWx0IENpdHkx\nHDAaBgNVBAoME0RlZmF1bHQgQ29tcGFueSBMdGQxEDAOBgNVBAsMB1Rlc3QgQ0Ex\nGjAYBgNVBAMMEXd3dy5leGFtcGxlY2EuY29tMSIwIAYJKoZIhvcNAQkBFhNleGFt\ncGxlQGV4YW1wbGUuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA\nw2rK1J2NMtQj0KDug7g7HRKl5jbf0QMkMKyTU1fBtZ0cCzvsF4CqV11LK4BSVWaK\nrzkaXe99IVJnH8KdOlDl5Dh/+cJ3xdkClSyeUT4zgb6CCBqg78ePp+nN11JKuJlV\nIG1qdJpB1J5O/kCLsGcTf7RS74MtqMFo96446Zvt7YaBhWPz6gDaO/TUzfrNcGLA\nEfHVXkvVWqb3gqXUztZyVex/gtP9FXQ7gxTvJml7UkmT0VAFjtZnCqmFxpLZFZ15\n+qP9O7Q2MpsGUO/4vDAuYrKBeg1ZdPSi8gwqUP2qWsGd9MIWRv3thI2903BczDc7\nr8WaIbm37vYZAS9G56E4+wIDAQABo1AwTjAdBgNVHQ4EFgQUugLrSJshOBk5TSsU\nANs4+SmJUGwwHwYDVR0jBBgwFoAUugLrSJshOBk5TSsUANs4+SmJUGwwDAYDVR0T\nBAUwAwEB/zANBgkqhkiG9w0BAQUFAAOCAQEAaMJ33zAMV4korHo5aPfayV3uHoYZ\n1ChzP3eSsF+FjoscpoNSKs91ZXZF6LquzoNezbfiihK4PYqgwVD2+O0/Ty7UjN4S\nqzFKVR4OS/6lCJ8YncxoFpTntbvjgojf1DEataKFUN196PAANc3yz8cWHF4uvjPv\nWkgFqbIjb+7D1YgglNyovXkRDlRZl0LD1OQ0ZWhd4Ge1qx8mmmanoBeYZ9+DgpFC\nj9tQAbS867yeOryNe7sEOIpXAAqK/DTu0hB6+ySsDfMo4piXCc2aA/eI2DCuw08e\nw17Dz9WnupZjVdwTKzDhFgJZMLDqn37HQnT6EemLFqbcR0VPEnfyhDtZIQ==\n-----END CERTIFICATE-----"
+        }
+      },
+      "status": {}
+    },
+    {
+      "kind": "ImageStream",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "centos7",
+        "creationTimestamp": null
+      },
+      "spec": {
+        "dockerImageRepository": "centos:7"
+      },
+      "status": {
+        "dockerImageRepository": ""
+      }
+    },
+    {
+      "kind": "ImageStream",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "myapp",
+        "creationTimestamp": null
+      },
+      "spec": {
+        "dockerImageRepository": ""
+      },
+      "status": {
+        "dockerImageRepository": ""
+      }
+    },
+    {
+      "kind": "BuildConfig",
+      "apiVersion": "v1",
+      "metadata": {
+        "name": "dockerfile-local",
+        "creationTimestamp": null,
+        "labels": {
+          "name": "dockerfile-local-build"
+        }
+      },
+      "spec": {
+        "triggers": [],
+        "source": {
+          "type": "Dockerfile",
+          "dockerfile": "FROM ruby-22-centos7:latest\nRUN yum -y install httpd"
+        },
+        "strategy": {
+          "type": "Docker",
+          "dockerStrategy": {
+            "from": {
+              "kind": "ImageStreamTag",
+              "name": "centos7:latest"
+            }
+          }
+        },
+        "output": {
+          "to": {
+            "kind": "ImageStreamTag",
+            "name": "myapp:latest"
+          }
+        },
+        "postCommit": {
+          "args": ["ls"]
+        },
+        "resources": {}
+      },
+      "status": {
+        "lastVersion": 0
+      }
+    }
+  ],
+  "labels": {
+    "template": "application-template-dockerbuild"
+  }
+}
+''')
+		shutit.send('oc create -f application-template-binary.json')
+		shutit.pause_point('')
+		# CREATE APP - DOCKER BINARY SOURCE
 
 		# TEMPLATES - 4.2.3 Templates
 		# SIMPLE SAMPLE APP
@@ -408,6 +472,89 @@ END''',note='create a secret docker.cfg')
 		# oc policy
 		#shutit.send('oc get rolebinding',note='')
 		#shutit.send('oc get clusterrolebinding',note='')
+
+		# PERSISTENT VOLUME SHARES
+		# set up nfs share
+		shutit.send('dnf install -y nfs-utils system-config-nfs') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
+		shutit.send('setsebool -P virt_use_nfs 1')                # allow docker to write to nfs shares(?)
+		shutit.send('systemctl enable nfs-server rpcbind')
+		# blat the nfs exports in existence
+		shutit.send('echo > /etc/exports')
+		shutit.send('oc delete pv pv01 && oc delete pv pv02 && oc delete pv pv03 && oc delete pv pv04 && oc delete pv pv05 && rm -rf /nfsvolumes')
+		for num in range(1,2):
+			shutit.send('mkdir -p /nfs_share_' + str(num))
+			shutit.send('echo "/nfs_share_' + str(num) + '                   origin(rw,root_squash)" >> /etc/exports')
+			#shutit.send('chgrp vagrant /nfs_share_' + str(num)) # doesn't work, needs to be nfsnobody
+			shutit.send('chown nfsnobody: /nfs_share_' + str(num))
+		shutit.send('iptables -I INPUT 1 -p tcp --dport 2049 -j ACCEPT')
+		shutit.send('systemctl restart nfs-server.service')
+		shutit.send('restorecon /etc/exports')
+		shutit.send('systemctl restart nfs-server.service')
+		shutit.send('systemctl restart rpcbind')
+		# TODO: different kinds of volumes
+		# create persistent volume shares
+		for num in range(1,2):
+			shutit.send_file('/tmp/nfs_' + str(num) + '.yml''','''apiVersion: "v1"
+kind: "PersistentVolume"
+metadata:
+  name: "pv000''' + str(num) + '''"
+spec:
+  capacity:
+    storage: "5Gi"
+  accessModes:
+    - "ReadWriteMany"
+  nfs:
+    path: "/nfs_share_1"
+    server: "origin"
+  persistentVolumeReclaimPolicy: "Recycle"''')
+			shutit.send('oc create -f /tmp/nfs_' + str(num) + '.yml')
+		shutit.send('oc new-project admin --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
+		for user in ['user1','user2','admin']:
+			shutit.send('oc login -u ' + str(user) + ' -p anystringwilldo',note='Log in as ' + str(user))
+			shutit.send('oc project ' + str(user))
+			# PERSISTENT VOLUME CLAIMS
+			# claim a volume
+			shutit.send_file('/tmp/pvclaim.yml','''apiVersion: "v1"
+kind: "PersistentVolumeClaim"
+metadata:
+  name: "claim1"
+spec:
+  accessModes:
+    - "ReadWriteMany"
+  resources:
+    requests:
+      storage: "5Gi"''')
+			shutit.send('oc create -f /tmp/pvclaim.yml')
+			#shutit.send('oc get pv',note='Get our persistent volumes')
+			shutit.send('oc get pvc',note='Get our persistent claims')
+			shutit.send_file('/tmp/create_pod.yml','''apiVersion: "v1"
+kind: "Pod"
+metadata:
+  name: "mypod"
+  labels:
+    name: "frontendhttp"
+spec:
+  containers:
+    -
+      name: "myfrontend"
+      image: "nginx"
+      ports:
+        -
+          containerPort: 80
+          name: "http-server"
+      volumeMounts:
+        -
+          mountPath: "/var/www/html"
+          name: "pvol"
+  volumes:
+    -
+      name: "pvol"
+      persistentVolumeClaim:
+        claimName: "claim1"''')
+			shutit.send('oc create -f /tmp/create_pod.yml')
+			shutit.send_until('oc get pods','Running')
+			shutit.send('oc exec -ti mypod touch /var/www/html/' + user)
+		shutit.pause_point('')
 
 		# EXTRAS
 		shutit.pause_point('')
