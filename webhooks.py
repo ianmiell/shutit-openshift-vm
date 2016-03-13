@@ -9,7 +9,7 @@ class openshift_webhooks(ShutItModule):
 		shutit.send('oc login -u user2 -p anystringwilldo')                                                                                                                   
 		shutit.send('oc project user2')            
 
-		shutit.send_file('application-template-dockerfile.json',r'''{
+		shutit.send_file('webhooks.json',r'''{
   "kind": "Template",
   "apiVersion": "v1",
   "metadata": {
@@ -95,11 +95,11 @@ class openshift_webhooks(ShutItModule):
     }
   ],
   "labels": {
-    "template": "application-template-webhooks"
+    "template": "webhooks"
   }
 }
 ''')
-		shutit.send('oc create -f application-template-dockerfile.json')
+		shutit.send('oc create -f webhooks.json')
 		shutit.send('oc new-app --template=centos7-webhooks')
 		shutit.send('''curl -k $(oc describe bc | grep Webhook | awk '{print $3}')''')
 		shutit.logout()
