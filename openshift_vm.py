@@ -426,6 +426,7 @@ END''',note='create a secret docker.cfg')
 
 		# PERSISTENT VOLUME SHARES
 		# set up nfs share
+		shutit.send('oc login -u system:admin')
 		shutit.send('dnf install -y nfs-utils system-config-nfs') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
 		shutit.send('setsebool -P virt_use_nfs 1')                # allow docker to write to nfs shares(?)
 		shutit.send('systemctl enable nfs-server rpcbind')
@@ -508,7 +509,6 @@ spec:
 		shutit.pause_point('')
 
 		# EXTRAS
-		shutit.pause_point('')
 		#shutit.send('openshift ex diagnostics')
 		shutit.logout()
 		shutit.logout()
