@@ -221,7 +221,7 @@ class openshift_vm(ShutItModule):
 }
 ''')
 		shutit.send('oc create -f application-template-dockerfile.json')
-		shutit.send('oc new-app --template= -f application-template-dockerfile.json')
+		shutit.send('oc new-app --template=centos7-dockerfile-local')
 		shutit.send('oc get all')
 		# CREATE APP - DOCKER BINARY SOURCE
 
