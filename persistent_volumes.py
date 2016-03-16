@@ -90,6 +90,7 @@ spec:
 			shutit.send('oc exec -ti mypod ls /var/www/html/')
 			shutit.send('oc delete all --all')
 			shutit.send('oc delete pvc claim1')
+			shutit.send('oc login -u system:admin -p anystringwilldo')
 			shutit.send('oc delete pv pv' + user)
 		shutit.logout()
 		shutit.logout()
