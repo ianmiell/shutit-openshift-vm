@@ -27,11 +27,12 @@ class openshift_persistent_volumes(ShutItModule):
 		shutit.send('systemctl restart rpcbind')
 		# TODO: different kinds of volumes
 		# create persistent volume shares
-		for num in range(1,2):
-			shutit.send_file('/tmp/nfs_' + str(num) + '.yml''','''apiVersion: "v1"
+		shutit.send('oc new-project admin --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
+		for user in ['user1','user2','admin']:
+			shutit.send_file('/tmp/nfs_' + str(user) + '.yml''','''apiVersion: "v1"
 kind: "PersistentVolume"
 metadata:
-  name: "pv000''' + str(num) + '''"
+  name: "pv''' + str(user) + '''"
 spec:
   capacity:
     storage: "5Gi"
@@ -40,10 +41,8 @@ spec:
   nfs:
     path: "/nfs_share_1"
     server: "origin"
-  persistentVolumeReclaimPolicy: "Recycle"''')
-			shutit.send('oc create -f /tmp/nfs_' + str(num) + '.yml')
-		shutit.send('oc new-project admin --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
-		for user in ['user1','user2','admin']:
+  persistentVolumeReclaimPolicy: "Retain"''')
+			shutit.send('oc create -f /tmp/nfs_' + str(user) + '.yml')
 			shutit.send('oc login -u ' + str(user) + ' -p anystringwilldo',note='Log in as ' + str(user))
 			shutit.send('oc project ' + str(user))
 			# PERSISTENT VOLUME CLAIMS
@@ -88,8 +87,10 @@ spec:
 			shutit.send('oc create -f /tmp/create_pod.yml')
 			shutit.send_until('oc get pods','.*Running.*')
 			shutit.send('sleep 30 && oc exec -ti mypod touch /var/www/html/' + user)
+			shutit.send('oc exec -ti mypod ls /var/www/html/')
 			shutit.send('oc delete all --all')
 			shutit.send('oc delete pvc claim1')
+			shutit.send('oc delete pv pv' + user)
 		shutit.logout()
 		shutit.logout()
 		return True
