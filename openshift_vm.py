@@ -1,11 +1,6 @@
-"""ShutIt module. See http://shutit.tk
-"""
-
 from shutit_module import ShutItModule
 
-
 class openshift_vm(ShutItModule):
-
 
 	def build(self, shutit):
 		# Some useful API calls for reference. See shutit's docs for more info and options:
@@ -107,6 +102,7 @@ def module():
 		depends=['shutit-library.virtualbox.virtualbox.virtualbox','tk.shutit.vagrant.vagrant.vagrant']
 	)
 
+# DEBUG: – oc get pod --v=10
 # From: pkg/authorization/api/types.go
 # oc get builds
 # oc get buildconfigs
