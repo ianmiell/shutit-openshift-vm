@@ -9,6 +9,7 @@ class openshift_webhooks(ShutItModule):
 		shutit.send('oc login -u user2 -p anystringwilldo')                                                                                                                   
 		shutit.send('oc project user2')            
 
+
 		shutit.send_file('webhooks.json',r'''{
   "kind": "Template",
   "apiVersion": "v1",
@@ -101,6 +102,7 @@ class openshift_webhooks(ShutItModule):
 ''')
 		shutit.send('oc create -f webhooks.json')
 		shutit.send('oc new-app --template=centos7-webhooks')
+#${CURL_COMMAND} -s -X POST -H "Authorization: bearer $TOKEN" -H "Accept: application/json" -H  "X-HTTP-Method-Override: PUT" -k ${OPENSHIFT_MASTER_URL}/oapi/v1/namespaces/${PROJECT}/buildconfigs/${AP P_NAME}/webhooks/${SECRET_WEBHOOK}/generic &> /dev/null
 		shutit.send('''curl -k $(oc describe bc | grep Webhook | awk '{print $3}')''')
 		shutit.logout()
 		shutit.logout()

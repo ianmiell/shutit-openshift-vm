@@ -102,7 +102,7 @@ def module():
 		depends=['shutit-library.virtualbox.virtualbox.virtualbox','tk.shutit.vagrant.vagrant.vagrant']
 	)
 
-# DEBUG: – oc get pod --v=10
+# DEBUG: oc get pod --v=10
 # From: pkg/authorization/api/types.go
 # oc get builds
 # oc get buildconfigs
