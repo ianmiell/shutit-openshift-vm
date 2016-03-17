@@ -30,3 +30,5 @@ shutit.core.module.build:yes
 [shutit.openshift_vm.openshift_vm.openshift_extras]
 shutit.core.module.build:yes
 
+[shutit.openshift_vm.openshift_vm.openshift_debug]
+shutit.core.module.build:no
