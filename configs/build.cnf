@@ -31,5 +31,7 @@ shutit.core.module.build:yes
 shutit.core.module.build:yes
 
 # Tests/disruptive
+[shutit.openshift_vm.openshift_vm.openshift_debug]
+shutit.core.module.build:no
 [shutit.openshift_vm.openshift_vm.openshift_disk_abuse]
 shutit.core.module.build:no
