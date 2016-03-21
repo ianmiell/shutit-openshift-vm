@@ -86,7 +86,7 @@ spec:
         claimName: "claim1"''')
 			shutit.send('oc create -f /tmp/create_pod.yml')
 			shutit.send_until('oc get pods','.*Running.*')
-			shutit.send('sleep 30 && oc exec -ti mypod touch /var/www/html/' + user)
+			shutit.send('oc exec -ti mypod touch /var/www/html/' + user)
 			shutit.send('oc exec -ti mypod ls /var/www/html/')
 			shutit.send('oc delete all --all')
 			shutit.send('oc delete pvc claim1')
