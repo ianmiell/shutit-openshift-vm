@@ -6,8 +6,8 @@ class openshift_extras(ShutItModule):
 		shutit.send('cd /tmp/openshift_vm')
 		shutit.login(command='vagrant ssh')
 		shutit.login(command='sudo su -',password='vagrant',note='Become root (there is a problem logging in as admin with the vagrant user')
-        # EXTRAS
-        shutit.send('openshift ex diagnostics',check_exit=False)
+		# EXTRAS
+		shutit.send('openshift ex diagnostics',check_exit=False)
 		shutit.logout()
 		shutit.logout()
 		return True

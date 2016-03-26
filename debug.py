@@ -6,8 +6,8 @@ class openshift_debug(ShutItModule):
 		shutit.send('cd /tmp/openshift_vm')
 		shutit.login(command='vagrant ssh')
 		shutit.login(command='sudo su -',password='vagrant',note='Become root (there is a problem logging in as admin with the vagrant user')
-        # debug
-        shutit.send('oc get events')
+		# debug
+		shutit.send('oc get events')
 		shutit.logout()
 		shutit.logout()
 		return True
