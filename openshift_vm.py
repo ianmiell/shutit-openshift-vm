@@ -72,7 +72,7 @@ class openshift_vm(ShutItModule):
 		shutit.send('mkdir -p /tmp/openshift_vm')
 		shutit.send('cd /tmp/openshift_vm')
 		shutit.send('vagrant init thesteve0/openshift-origin')
-		shutit.send('vagrant up --provider virtualbox')
+		shutit.send('vagrant up --provider virtualbox',timeout=99999)
 		shutit.login(command='vagrant ssh')
 		shutit.login(command='sudo su -',password='vagrant',note='Become root (there is a problem logging in as admin with the vagrant user')
 		shutit.send('dnf install -y socat') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
