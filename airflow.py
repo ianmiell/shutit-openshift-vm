@@ -1,4 +1,5 @@
 from shutit_module import ShutItModule
+import base64
 
 class openshift_airflow(ShutItModule):
 
@@ -28,6 +29,19 @@ class openshift_airflow(ShutItModule):
 
 		shutit.send('oc create -f /tmp/imagestream.json')
 		# BUILD CONFIG
+
+		shutit.send_file('secret.json','''{
+  "apiVersion": "v1",
+  "kind": "Secret",
+  "metadata": {
+    "name": "mysecret"
+  },
+  "namespace": "user2",
+  "data": {
+    "username": "''' + base64.b64encode('myusername') + '''"
+  }
+}''')
+		shutit.send('oc create -f secret.json')
 		shutit.send_file('/tmp/buildconfig.json','''
   {
       "kind": "BuildConfig",
@@ -52,6 +66,12 @@ class openshift_airflow(ShutItModule):
           "to": {
             "kind": "ImageStreamTag",
             "name": "airflow:latest"
+          }
+        },
+        "volumes": {
+          "name": "secvol",
+          "secret": {
+            "secretname": "mysecret"
           }
         }
       }
