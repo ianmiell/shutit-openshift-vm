@@ -63,7 +63,7 @@ class openshift_webhooks(ShutItModule):
         "triggers": [{
           "type": "Generic",
           "generic": {
-            "secret": "mysecret"
+            "secret": "mysecret_webhooks"
           }
         }],
         "source": {
