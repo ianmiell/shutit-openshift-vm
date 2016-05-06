@@ -19,7 +19,7 @@ class openshift_secrets(ShutItModule):
   "apiVersion": "v1",
   "kind": "Secret",
   "metadata": {
-    "name": "mysecret"
+    "name": "mysecret_secrets"
   },
   "namespace": "user2",
   "data": { 
