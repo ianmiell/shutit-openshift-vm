@@ -1,3 +1,5 @@
+# See: https://www.openshift.org/vm/
+
 from shutit_module import ShutItModule
 
 class openshift_vm(ShutItModule):
@@ -13,6 +15,7 @@ class openshift_vm(ShutItModule):
 		shutit.login(command='sudo su -',password='vagrant',note='Become root (there is a problem logging in as admin with the vagrant user')
 		shutit.send('dnf install -y socat') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
 		# BASIC USAGE
+		shutit.pause_point('')
 		shutit.send('oc whoami',note='Find out who I am logged in as')
 		# LOGIN, SET UP USERS
 		shutit.send('oc login -u user1 -p anystringwilldo',note='Log in as user1')
