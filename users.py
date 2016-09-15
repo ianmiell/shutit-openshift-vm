@@ -7,7 +7,7 @@ class openshift_users(ShutItModule):
 		shutit.login(command='vagrant ssh')
 		shutit.login(command='sudo su -',password='vagrant',note='Become root (there is a problem logging in as admin with the vagrant user')
 		# USERS AND GROUPS
-		shutit.send('oc login -u system:admin')
+		shutit.send('oc login -u admin -p admin')
 		shutit.send('oc describe users',note='Look up users on the system')
 		shutit.send('oc describe groups',note='Look up groups on the system')
 		shutit.send('oc describe policybindings',note='Describe the policy of the system (will be useful as we set up users)')

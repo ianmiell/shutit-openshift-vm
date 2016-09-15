@@ -6,9 +6,11 @@ class openshift_disk_abuse(ShutItModule):
 		shutit.send('cd /tmp/openshift_vm')
 		shutit.login(command='vagrant ssh')
 		shutit.login(command='sudo su -',password='vagrant',note='Become root (there is a problem logging in as admin with the vagrant user')
-		#shutit.send('oc login -u user2 -p anystringwilldo')                                                                                                                   
-		#shutit.send('oc project user2')            
 		# TODO: provision image and fill up disk
+		shutit.send('mkdir -p tmp && cd tmp')
+		shutit.send_file('Dockerfile','''FROM openshift/busybox-http-app
+ENTRYPOINT cat /dev/urandom >> /tmp/afile''')
+		shutit.send('oc new-app $(pwd) --strategy=docker')
 		shutit.pause_point('')
 		shutit.logout()
 		shutit.logout()
