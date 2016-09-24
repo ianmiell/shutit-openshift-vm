@@ -13,20 +13,17 @@ class openshift_vm(ShutItModule):
 		shutit.send('vagrant up --provider virtualbox',timeout=99999)
 		shutit.login(command='vagrant ssh')
 		shutit.login(command='sudo su -',password='vagrant',note='Become root (there is a problem logging in as admin with the vagrant user')
-		shutit.send('dnf install -y socat') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
+		shutit.install('socat') # https://blog.openshift.com/quick-tip-port-forwarding-and-the-all-in-one-vm/
 		# BASIC USAGE
 		shutit.send('oc whoami',note='Find out who I am logged in as')
 		# LOGIN, SET UP USERS
-		shutit.send('oc login -u user1 -p anystringwilldo',note='Log in as user1')
+		shutit.send('oc login -u user -p user',note='Log in as user')
 		shutit.send('oc whoami -t',note='Display my login token')
 		shutit.send('TOKEN=$(oc whoami -t)',note='Put token into env variable.')
-		shutit.send('oc new-project user1 --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
+		shutit.send('oc new-project user1 --description="Example project" --display-name="Hello openshift"',note='Create a new project')
 		shutit.send('oc project user1',note='Switch to that project')
 		shutit.send('oc status',note='Get information about the current project')
-		shutit.send('oc login -u user2 -p anystringwilldo',note='Log in as user2')
-		shutit.send('oc new-project user2 --description="Example project" --display-name="Hello openshift!"',note='Create a new project')
-		shutit.send('oc project user2',note='Switch to that project')
-		shutit.send('oc status',note='Get information about the current project')
+		shutit.pause_point('pausing')
 		shutit.logout()
 		shutit.logout()
 		return True

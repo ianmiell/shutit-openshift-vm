@@ -35,3 +35,5 @@ shutit.core.module.build:no
 shutit.core.module.build:no
 [shutit.openshift_vm.openshift_vm.openshift_disk_abuse]
 shutit.core.module.build:no
+[shutit.openshift_vm.openshift_vm.openshift_image_policy]
+shutit.core.module.build:no
