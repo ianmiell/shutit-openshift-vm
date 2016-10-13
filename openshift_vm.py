@@ -23,7 +23,6 @@ class openshift_vm(ShutItModule):
 		shutit.send('oc new-project user1 --description="Example project" --display-name="Hello openshift"',note='Create a new project')
 		shutit.send('oc project user1',note='Switch to that project')
 		shutit.send('oc status',note='Get information about the current project')
-		shutit.pause_point('pausing')
 		shutit.logout()
 		shutit.logout()
 		return True
